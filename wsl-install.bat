@@ -1,37 +1,41 @@
 @echo off
+setlocal
 
 call "%~dp0wsl-env.bat"
 if errorlevel 1 exit /b %errorlevel%
 
-set CACHE_DIR=%~dp0cache
-set CACHE_FILE=%CACHE_DIR%\AlmaLinux-10_inited.tar
+set CACHE_DIR=%~dp0.wsl-cache
+set CACHE_FILE=%CACHE_DIR%\AlmaLinux-10.tar
+
+rem 引数に --no-cache が指定されている場合は 1
+set "NO_CACHE="
+for %%A in (%*) do (
+    if /I "%%~A"=="--no-cache" set "NO_CACHE=1"
+)
 
 rem cache フォルダが無ければ作る
 if not exist "%CACHE_DIR%" (
     mkdir "%CACHE_DIR%"
 )
 
-if not exist "%CACHE_FILE%" (
+rem --no-cache 指定、またはキャッシュファイルなし
+set "CACHE_MISS="
+if defined NO_CACHE set "CACHE_MISS=1"
+if not exist "%CACHE_FILE%" set "CACHE_MISS=1"
 
-  rem cache ファイルが無ければ、AlmaLinux-10 をインストールして初期化する
+if defined CACHE_MISS (
+
+  rem キャッシュが無ければインストール後にキャッシュ
   wsl --install AlmaLinux-10 --name %WSL_DISTRO_NAME% --no-launch
-  wsl -u root -d %WSL_DISTRO_NAME% -- sh -c ^
-    "mkdir -p /mnt/workspace && mount -t drvfs '%~dp0' /mnt/workspace"
-  wsl -u root -d %WSL_DISTRO_NAME% -- /mnt/workspace/wsl/init.sh
-  wsl -u root -d %WSL_DISTRO_NAME% -- umount -l /mnt/workspace
-  wsl -t %WSL_DISTRO_NAME%
+  if exist "%CACHE_FILE%" del /Q "%CACHE_FILE%"
   wsl --export %WSL_DISTRO_NAME% "%CACHE_FILE%"
 
 ) else (
 
+  rem キャッシュからインストール
   wsl --install --from-file "%CACHE_FILE%" --name %WSL_DISTRO_NAME% --no-launch
 
 )
 
-rem setup.sh を実行する
-wsl -u root -d %WSL_DISTRO_NAME% -- sh -c ^
-  "mkdir -p /mnt/workspace && mount -t drvfs '%~dp0' /mnt/workspace"
-wsl -u root -d %WSL_DISTRO_NAME% -- /mnt/workspace/wsl/setup.sh
-wsl -u root -d %WSL_DISTRO_NAME% -- umount -l /mnt/workspace
-
+wsl -u root -d %WSL_DISTRO_NAME% -- ./wsl/setup.sh %*
 wsl -t %WSL_DISTRO_NAME%
