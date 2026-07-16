@@ -37,4 +37,15 @@ fi
 # agy --version
 # '
 
+# echo "Codex CLI をインストール中..."
+# curl -fsSL https://chatgpt.com/codex/install.sh | sh
+
+# echo "pip をインストール中..."
+# dnf install -y python3-pip python3-pip-wheel
+# python -m pip --version
+
+# echo "spec-kitty-cli をインストール中..."
+# python -m pip install spec-kitty-cli
+# spec-kitty --version
+
 echo "設定完了"
